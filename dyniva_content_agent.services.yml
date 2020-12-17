@@ -1,0 +1,6 @@
+services:
+  dyniva_content_agent.authentication.agent_site_auth:
+    class: Drupal\dyniva_content_agent\Authentication\Provider\AgentSiteAuthenticationProvider
+    arguments: ['@entity_type.manager']
+    tags:
+      - { name: authentication_provider, provider_id: 'agent_site_auth', global: TRUE, priority: 35 }

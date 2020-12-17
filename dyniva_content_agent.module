@@ -1,0 +1,97 @@
+<?php
+
+use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Core\Field\FieldStorageDefinitionInterface;
+
+/**
+ * Implements hook_entity_base_field_info().
+ */
+function dyniva_content_agent_entity_base_field_info(EntityTypeInterface $entity_type) {
+  $entity_types = _dyniva_content_agent_field_definition();
+  foreach($entity_types as $type => $fields) {
+    if ($entity_type->id() == $type) {
+      return $fields;
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_insert().
+ *
+ * @param EntityInterface $entity
+ */
+function dyniva_content_agent_entity_insert(EntityInterface $entity) {
+  dyniva_content_agent_entity_update($entity);
+}
+
+/**
+ * Implements hook_entity_update().
+ *
+ * @param EntityInterface $entity
+ */
+function dyniva_content_agent_entity_update(EntityInterface $entity) {
+  if(!($entity instanceof \Drupal\Core\Entity\FieldableEntityInterface)) return;
+  if($entity->hasField('status') &&
+    !$entity->get('status')->value) return;
+  $enabled_content = \Drupal::config('dyniva_content_agent.settings')->get('enabled_content');
+  if(!empty($enabled_content[$entity->getEntityTypeId()][$entity->bundle()])){
+    if($entity->hasField('sync_sites') &&
+      !$entity->get('sync_sites')->isEmpty()
+    ) {
+      $sites = _dyniva_content_receiver_get_sites();
+      $client = \Drupal::service('dyniva_content_receiver.client');
+      foreach($entity->sync_sites->getValue() as $values) {
+        $uuid = $values['value'];
+        if(!empty($sites[$uuid]['url'])) {
+          /* @var \Drupal\dyniva_content_receiver\Client $client */
+          $client->pushQueue($sites[$uuid]['url'], $entity, ['Authorization' => "Uuid " . $uuid]);
+        }
+      }
+      $client->doQueue();
+    }
+  }
+}
+
+function _dyniva_content_agent_field_definition() {
+  $entity_types = [];
+  $fields = [];
+  $default_value = [];
+  if($site_id = \Drupal::config('dyniva_content_agent.settings')->get('site_id', '')) {
+    if(\Drupal::config('dyniva_content_agent.settings')->get('push_to_hub')) {
+      $default_value = [$site_id];
+    }
+  }
+  $fields['sync_sites'] = BaseFieldDefinition::create('list_string')
+  ->setLabel('Push to')
+  ->setDefaultValue($default_value)
+  ->setSetting('allowed_values_function', '_dyniva_content_agent_sites_options')
+  ->setCardinality(FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED)
+//  ->setDisplayOptions('form', [
+//    'type' => 'options_buttons',
+//    'weight' => 999
+//  ])
+  ->setDisplayConfigurable('form', TRUE);
+
+  $enabled_content = \Drupal::config('dyniva_content_agent.settings')->get('enabled_content', []);
+  if($enabled_content) {
+    foreach ($enabled_content as $type => $bundles){
+      if(!empty($bundles)){
+        $entity_types[$type] = $fields;
+      }
+    }
+  }
+
+  return $entity_types;
+}
+
+function _dyniva_content_agent_sites_options(BaseFieldDefinition $definition, $entity) {
+  $options = [];
+  $sites = _dyniva_content_receiver_get_sites();
+  foreach($sites as $site) {
+    $options[$site['uuid']] = $site['label'];
+  }
+  return $options;
+}

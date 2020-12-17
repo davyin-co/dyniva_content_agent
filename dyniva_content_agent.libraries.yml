@@ -1,0 +1,20 @@
+codemirror.yaml:
+  js:
+    js/codemirror.js: {}
+  dependencies:
+    - dyniva_content_agent/libraries.codemirror.yaml
+
+libraries.codemirror.yaml:
+  js:
+    /libraries/codemirror/mode/yaml/yaml.js: {}
+  dependencies:
+    - dyniva_content_agent/libraries.codemirror.text
+
+libraries.codemirror.text:
+  css:
+    component:
+      /libraries/codemirror/lib/codemirror.css: {}
+  js:
+    /libraries/codemirror/lib/codemirror.js: { weight: -1 }
+    /libraries/codemirror/addon/runmode/runmode.js: {}
+    /libraries/codemirror/addon/display/placeholder.js: {}

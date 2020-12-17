@@ -1,0 +1,24 @@
+<?php
+
+/**
+ * @file
+ */
+
+use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Field\FieldStorageDefinitionInterface;
+
+/**
+ * Implements hook_update_n().
+ */
+function dyniva_content_agent_update_8001() {
+  $entity_types = _dyniva_content_agent_field_definition();
+  foreach($entity_types as $type => $fields) {
+    foreach($fields as $name => $field) {
+      \Drupal::entityDefinitionUpdateManager()
+        ->installFieldStorageDefinition($name, $type, 'dyniva_content_agent', $field);
+    }
+  }
+}

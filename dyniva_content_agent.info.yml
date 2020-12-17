@@ -1,0 +1,7 @@
+name: Dyniva Content Agent (Alpha)
+type: module
+description: Dyniva Content Agent.
+core: 8.x
+package: Dyniva
+dependencies:
+  - dyniva_content_receiver

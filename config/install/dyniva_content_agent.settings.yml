@@ -1,0 +1,8 @@
+server_domain: ""
+site_id: ""
+cron_enabled: 1
+push_to_hub: false
+skipped_fields: ""
+cron_max_size: 100
+enabled_content: []
+debug: false
